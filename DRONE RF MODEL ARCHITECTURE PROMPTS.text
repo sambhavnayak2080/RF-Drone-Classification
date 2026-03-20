@@ -1,0 +1,73 @@
+DRONE RF MODEL ARCHITECTURE PROMPTS
+First lets understand these notebooks showing the models as EfficientNet, MobileNet and Swin Tiny with their architectures with it, then tell me to adapt it on to my spectrogram dataset with path /kaggle/input/genesys-spectrogram-dataset, then input is taken with path for the cnn part 1 /kaggle/input/the-best-models/cnn_transformer_part1_20260208_153151 and the path for the cnn part 2 /kaggle/input/the-best-models/cnn_transformer_part2_20260208_105337 changing heads and all, basically this is all done to fine tune these models one by one using my spectrogram dataset as specified with noise robustness Coding Constraints (Mandatory)
+No emojis
+No Unicode characters
+No tick marks in code
+No inline comments
+Each function may contain exactly one comment, written using triple-quoted strings, describing the function purpose
+Do not add advice, recommendations, qualitative judgments, or descriptive adjectives
+Code must be minimal, deterministic, and reproducible wait for my response after each model training, validation, accuracy everything need to be fine tune as per the models to gain success
+train on clean 15db 20db validate on 0db testing on clean 5db 10db 
+i prefer a new update that please use 80-20 splitting the training as it is too long to train and validate finetuning please make required changes to the previous codes rather making any other changes also inlude the part to save the model as zip file
+Models to work 
+Model 1: VGG16 with Batch Normalization
+
+RF Spectrogram Adaptation:
+- Deep sequential convolutions (13 layers) capture hierarchical RF texture patterns
+- Batch normalization stabilizes gradients for subtle RF signal variations
+- Large receptive field (7x7 effective) covers wide frequency-time context
+- Modification: Replace classifier with multi-task head, reduce FC hidden size from 4096 to 1024
+
+
+Model 2: MobileNetV3-Large
+
+RF Spectrogram Adaptation:
+- Squeeze-and-Excitation blocks learn channel-wise attention for RF frequency band importance
+- Hard-Swish activation provides non-linearity while being hardware-efficient
+- Neural Architecture Search (NAS) optimized structure for mobile deployment
+- Modification: Large variant (vs Lite) maintains capacity for complex RF multi-task learning
+
+
+ Model 3: EfficientNet-B0
+
+RF Spectrogram Adaptation:
+- Compound scaling (depth, width, resolution) optimized via grid search for balanced features
+- MBConv blocks with Squeeze-Excitation learn adaptive channel attention for RF bands
+- Swish activation provides smooth gradients for subtle RF pattern differentiation
+- Modification: B0 variant appropriate for dataset size, prevents overfitting
+
+
+Model 4: Xception (Depth-Separable CNN)
+
+RF Spectrogram Adaptation:
+- Depthwise separable convolutions decouple spatial (frequency-time) and channel-wise learning
+- Efficient for RF where frequency patterns (spatial) and signal characteristics (channels) are independent
+- 36 convolutional layers with residual connections prevent gradient degradation
+- Modification: Global average pooling preserves spatial translation invariance
+
+
+Model 5: Vision Transformer (ViT-Small/16)
+
+RF Spectrogram Adaptation:
+- Global self-attention captures long-range frequency dependencies across entire spectrogram
+- 16x16 patches create 196 tokens, each representing a local frequency-time region
+- Positional embeddings encode spatial relationships between RF patterns
+- Modification: Small variant (22M params) with attention extraction for explainability
+
+
+Model 6: Swin Transformer Tiny
+
+RF Spectrogram Adaptation:
+- Shifted window attention balances local RF pattern extraction with cross-region interaction
+- Hierarchical feature maps (56->28->14->7) capture multi-scale frequency structures
+- Linear complexity O(n) vs ViT O(n^2) enables efficient processing
+- Modification: Tiny variant (28M params) provides transformer SOTA with manageable compute
+
+
+
+vit small,swin tiny, vgg - least amount of time
+mobilenet,efficinet net, exception - most time
+dataset - spectrogram - train - following markdown
+acc f1 fpr fnr
+clean, 0to20db
+train test val splits- 80/20
