@@ -1,0 +1,8 @@
+diagram to edit:
+this should be the processing unit shown in detail
+
+make the current first 2 blocks small and keep it a top = its not our work
+we downloaded it .. we didn't collect anything,
+data preprocessing -> model training -> evaluation->predict
+data preprocessing  = properly shown - using the markdown file for the preprocessing steps I have followed 
+model = CNN, transformer, vision mamba  - shown using graphical abstracts/icon diagrams of each 

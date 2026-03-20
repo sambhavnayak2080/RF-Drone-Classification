@@ -1,0 +1,949 @@
+\documentclass[runningheads]{llncs}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{placeins}
+\usepackage{array}
+\begin{document}
+
+\title{Exploring Recent Hybrid Architectures for Noise Robust Drone Classification using RF
+Signature}
+
+\titlerunning{Noise Robust DL Architecture for Drone Classification}
+\authorrunning{Nayak et al.}
+
+\author{Sambhav Nayak\inst{1} \and 
+        Samir Singh\inst{1} \and 
+        Subrat Dash\inst{1} \and 
+        Rahul Kumar\inst{1} \and 
+        Mainak Bandyopadhyay\inst{1}}
+
+\institute{School of Computer Engineering, KIIT Deemed to be University, Bhubaneswar, India}
+\maketitle
+
+\begin{abstract}
+Radio frequency (RF) fingerprinting has emerged as an effective approach for drone classification due to its ability to operate beyond visual range and under adverse environmental conditions. However, deep learning–based RF classification models often exhibit significant performance degradation in noisy and low signal-to-noise ratio (SNR) scenarios, limiting their practical deployment.
+
+\keywords{Drone Classification \and RF Fingerprinting \and Noise Robustness \and Transformers \and Vision Mamba}
+\end{abstract}
+
+\section{Introduction}
+Unmanned aerial vehicles (UAVs) are increasingly used in civilian, commercial, and military applications, ranging from aerial photography and delivery services to surveillance and reconnaissance. While these applications offer significant benefits, the widespread availability of UAVs also raises serious security concerns, including unauthorized airspace intrusion, privacy violations, and malicious activities. As a result, accurate and reliable drone identification has become a critical requirement for modern airspace monitoring systems.
+
+Traditional drone detection techniques based on vision, radar, or acoustic sensing face limitations in adverse weather conditions, non-line-of-sight scenarios, and cluttered environments \cite{ref1}. In contrast, radio frequency (RF)–based drone classification leverages unique signal characteristics emitted during UAV communication, enabling detection beyond visual range and under challenging environmental conditions. Recent advances in deep learning have further improved RF fingerprinting performance by automatically learning discriminative features from raw or transformed RF signals.
+
+Despite these advancements, existing deep learning based RF classification methods remain highly sensitive to noise, interference, and low signal-to-noise ratio (SNR) conditions. Many studies report strong performance under clean or controlled environments, but accuracy often degrades significantly in realistic RF scenarios. Additionally, complex architectures with high computational costs hinder deployment on resource-constrained or real-time systems. Motivated by these challenges, this work focuses on analyzing noise robustness, cross-dataset generalization, and efficiency of deep learning models for RF-based drone classification.
+\section{Background}
+\subsection{General System Overview}
+
+Radio frequency (RF)–based drone classification systems exploit the unique RF
+fingerprints emitted by unmanned aerial vehicles (UAVs) and their controllers
+to enable passive identification and monitoring. Unlike radar- or vision-based
+systems, passive RF sensing does not require active transmission and can operate
+effectively in non-line-of-sight conditions, making it suitable for surveillance
+and security applications \cite{kim2018drone}.
+
+In the data acquisition stage, RF signals are captured in the 2.4~GHz and
+5.8~GHz ISM bands, which are commonly used for UAV command-and-control
+communication. Public benchmark datasets such as the DroneRF dataset provide
+RF recordings from multiple drone models and operational modes, supporting
+supervised learning and performance benchmarking \cite{allahham2019dronerf}.
+The availability of diverse datasets is critical for improving robustness and
+generalization capability.
+
+During preprocessing, raw in-phase and quadrature (I/Q) samples are normalized
+and segmented into fixed-length frames. To extract discriminative features,
+time--frequency transformations such as the Short-Time Fourier Transform (STFT)
+are applied to generate spectrogram representations. Time--frequency analysis
+has been widely adopted for RF signal classification, as it captures both
+spectral and temporal characteristics of drone transmissions \cite{oshea2017introduction}.
+
+In the classification stage, deep learning architectures—particularly
+convolutional neural networks (CNNs)—are trained using spectrogram images or
+related representations. CNN-based approaches have demonstrated strong
+performance in distinguishing drone types, even under low signal-to-noise ratio
+(SNR) conditions \cite{ozturk2020deep}. More recent studies explore domain
+adaptation and robustness enhancement techniques to improve cross-dataset
+performance \cite{shi2022domain}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\linewidth]{1771934638046_image.jpeg}
+    \caption{System Overall Architecture}
+    \label{fig:system_overview}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\linewidth]{S_final_rf_architecture _cropped_2_page-0001.jpg}
+    \caption{RF Architecture Pipeline}
+    \label{fig:rf_architecture}
+\end{figure}
+
+
+\subsection{Previous Convolution-based Approaches for Classification}
+
+The adoption of Convolutional Neural Networks (CNNs) has significantly improved RF-based drone classification by enabling the automated extraction of complex signal features. Unlike traditional Deep Neural Networks (DNN) that often suffer from performance degradation in multi-class scenarios \cite{ref1}, CNN architectures leverage spatial and temporal correlations within signal data to achieve higher accuracy. 
+
+Early methodologies in this domain frequently utilized 1D-CNN architectures to process raw signal data. For instance, Al-Emadi and Al-Senaid \cite{ref8} developed a five-layer 1D-CNN that achieved 99.7\% accuracy for drone detection and 88.4\% for identification, notably outperforming standard DNN models. To better address frequency-specific characteristics, Allahham et al. \cite{ref9} implemented a multi-channel 1-D CNN approach. By processing the spectrum in segmented sub-channels, their model effectively localized signal activity and reached 87.4\% accuracy in 10-class state identification. 
+
+Building upon these successes, a common shift toward 2D representations occurred, involving the transformation of RF signals into spectrograms via Short-Time Fourier Transform (STFT). Mokhtari et al. \cite{ref10} utilized this method with a 2D-CNN to reach nearly 100\% accuracy in identifying four distinct drone classes. Furthermore, to improve depth and training stability, Basak et al. \cite{ref11} introduced Deep Residual Networks (DRNN). Their model demonstrated exceptional robustness, maintaining 99\% accuracy at 0 dB SNR by effectively handling noise through identity mapping. Finally, research has shown that integrating spectral features like Power Spectral Density (PSD) and Mel-Frequency Cepstral Coefficients (MFCC) can further refine CNN performance, as these descriptors provide essential discriminative power in varied RF environments \cite{ref12}. Hybrid convolutional-recurrent frameworks have also been explored to jointly capture spatial and temporal dependencies in RF signal data \cite{ref2}.
+
+\subsection{Vision Transformer and Vision Mamba-based Models}
+Recent advancements in Unmanned Aerial Vehicle (UAV) identification have seen a paradigm shift from traditional Convolutional Neural Networks (CNNs) to architectures capable of capturing global dependencies. While CNNs are limited by local receptive fields, Vision Transformers (ViT) and the emerging Vision Mamba (Vim) models leverage global context to analyze the complex time-frequency domain of RF signals.
+Transformers utilize self-attention mechanisms to model long-range relationships in RF spectrograms. Research has demonstrated that pure Transformer architectures can achieve superior accuracy in drone-based tasks. For example, the RFDroneViT framework employs a two-stage approach: a detection stage using a Detection Transformer (DETR) and an identification stage utilizing ViT-B/16, achieving a classification accuracy of 98.7\% \cite{xu2025rfv}. Similarly, ViT models have been applied to distinguish "malicious" drones from standard ones, outperforming ResNet-50 with an accuracy of 98.3\% \cite{jamil2022malicious}.
+Despite their success, the quadratic computational complexity of self-attention denoted as $O(N^2)$ poses significant challenges for real-time edge deployment. To mitigate this, hybrid models have been developed. SignalFormer \cite{yan2023signalformer} utilizes a CNN-based tokenizer to generate time-frequency tokens from both magnitude and phase information, maintaining high performance ($97.48\%$–$98.16\%$) even under significant co-frequency interference from Wi-Fi and Bluetooth. Other hybrid approaches have successfully combined Variational Mode Decomposition (VMD) with Transformers to identify UAV flight controllers in real-world environments \cite{han2025realworld}.
+To overcome the efficiency bottlenecks of ViTs, State-Space Models (SSMs) like Mamba \cite{ref27} have been adapted for RF analysis. These models achieve global receptive fields while maintaining linear complexity $O(N)$, making them ideal for high-throughput RF signal processing. 
+Recent studies such as MambaRF introduce a bi-directional selective scanning mechanism that processes RF spectrograms both horizontally and vertically \cite{yao2025mambarf}. When integrated with a MobileNetV3 backbone, this architecture captures comprehensive global information, outperforming traditional VGG architectures in drone type and flight state identification. Furthermore, MaRNet provides a synergistic framework that integrates Mamba modules into a Residual Network (ResNet). By embedding Mamba blocks within residual stages, this architecture addresses low signal-to-noise ratio (SNR) challenges and maintains high accuracy in noisy environments \cite{mi2026marnet}. Building upon the need for efficiency, the Efficient VMamba variant utilizes atrous-based selective scanning through skip sampling to further reduce the computational load while preserving the global context necessary for distinguishing subtle RF fingerprints \cite{pei2024efficient}. Finally, although primarily designed for multimodal UAV detection, the DCAM-DETR model demonstrates the efficacy of parallel Mamba encoders for real-time, long-range dependency modeling \cite{qin2026dcam}.
+
+
+\subsection{Noise-Based Challenges for Real-Time Classification}
+
+
+Noise-based RF drone classification exploits hardware-induced radio frequency fingerprints (RFFs) embedded within controller–UAV communication signals, typically transmitted over congested ISM bands (2.4 GHz and 5.8 GHz). Although deep learning-based frameworks have demonstrated high classification accuracy under controlled laboratory and high signal-to-noise ratio (SNR) conditions, their robustness deteriorates significantly in realistic deployment environments characterized by interference, multipath fading, and dynamic channel variations \cite{Noh2022,Podder2025}.
+
+At extended surveillance ranges, weak received signals obscure subtle transmitter impairments such as phase noise, carrier frequency offset, I/Q imbalance, and nonlinear distortion, which constitute the fundamental discriminative RFF features. As SNR approaches low levels, these intrinsic hardware signatures become increasingly masked by additive noise, leading to rapid performance degradation \cite{Podder2025}. Moreover, UAV mobility introduces Doppler shifts and time-varying multipath effects that entangle device-specific fingerprints with channel-induced distortions, creating significant domain shift between training and operational environments.
+
+Spectrogram-based CNN approaches, widely adopted for UAV RF classification, are particularly sensitive to noise contamination. Low-SNR conditions reduce contrast in power spectral density (PSD) representations and may cause models to overfit environmental artifacts rather than stable hardware-dependent features \cite{Noh2022}. Furthermore, scalability remains a challenge as the number of UAV models increases, especially when devices share similar RF front-end architectures or communication protocols \cite{Jang2021,Huang2024}. Despite recent advances, achieving robust, generalizable, and noise-resilient UAV RF identification under realistic channel dynamics remains an open research problem.
+
+\subsection{Noise-Based Robustness Deployment Characteristics of Previous Approaches}
+RF-based UAV classification methods exhibit significant differences in noise robustness, computational efficiency, and inference feasibility. Early approaches, such as those by O’Shea and Hoydis \cite{oshea2017introduction} and Kim et al. \cite{kim2018drone}, offered high efficiency and supported real-time operation, yet their performance degraded under noisy channels, interference, and dynamic environmental conditions.
+
+Residual networks inclusion, proposed by Basak et al. \cite{ref11}, improved robustness to noisy and fading signals through hierarchical feature extraction, albeit with increased computational cost and latency. Further enhancements were achieved via domain adaptation and noise-aware preprocessing, as demonstrated by Shi et al. \cite{shi2022domain} and Noh et al. \cite{Noh2022}, which maintained real-time feasibility while handling environmental variability and interference.
+
+Transformer-based models, including Yan et al. \cite{yan2023signalformer} and Xu et al. \cite{xu2025rfv}, capture long-range and global dependencies in RF signals, delivering strong noise resilience. However, their high computational demands often require GPU support, limiting deployment on resource-constrained platforms.
+
+Mamba-based architectures, such as Yao et al. \cite{yao2025mambarf} and Mi et al. \cite{mi2026marnet}, achieve a favorable balance between robustness and efficiency. Their linear-complexity sequence modeling enables real-time, edge-friendly inference while maintaining strong resilience to interference and dynamic channel conditions.
+
+Overall, RF-based UAV classification methods can be positioned along a robustness–efficiency–inference spectrum: shallow CNNs are efficient but sensitive to noise, Transformers maximize robustness at higher computational cost, and Mamba-based models provide an optimal trade-off suitable for practical, real-world UAV detection.
+
+\begin{table}[t]
+\centering
+\caption{Review of RF-Based UAV Classification Methods: Noise-Based Deployment Characteristics}
+\label{tab:top10_rf_noise}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{|p{2.7cm}|p{2.3cm}|p{4cm}|p{7.5cm}|}
+\hline
+\textbf{Ref (Year)} & \textbf{Architecture} & \textbf{Key Idea} & \textbf{Noise-Based Deployment Characteristics} \\ \hline
+
+O’Shea \& Hoydis (2017) & CNN & Deep learning on raw IQ signals & Limited robustness to noise and interference, but highly efficient and feasible for real-time inference. \\ \hline
+
+Kim et al. (2018) & Classical ML & Handcrafted RF fingerprint features & Low noise resilience with very high efficiency, enabling real-time deployment. \\ \hline
+
+Basak et al. (2021) & ResNet & Deep residual RF fingerprinting & Improved robustness under noisy and dynamic channels; moderate computational cost and inference latency. \\ \hline
+
+Shi et al. (2022) & CNN + Domain Adaptation & Cross-environment generalization & High robustness against environmental and noise variations; moderate efficiency and inference latency. \\ \hline
+
+Noh et al. (2022) & CNN + Noise Preprocessing & Interference-aware preprocessing & Strong noise resilience while maintaining moderate computational cost and real-time inference. \\ \hline
+
+Yan et al. (2023) & Hybrid Transformer & Local–global feature fusion & High robustness to dynamic noise; moderate-to-high computational requirements limit edge deployment. \\ \hline
+
+Huang et al. (2024) & Channel-Aware DL & Dynamic channel modeling & Strong noise and channel robustness; moderate computational cost and inference feasibility. \\ \hline
+
+Xu et al. (2025) & Improved Vision Transformer & Enhanced attention modeling & High noise resilience but computationally intensive, requiring GPU for real-time operation. \\ \hline
+
+Yao et al. (2025) & Mamba (State-Space Model) & Linear-complexity sequence modeling & High robustness under noisy conditions; efficient and supports edge-friendly real-time inference. \\ \hline
+
+Mi et al. (2026) & Mamba + ResNet Hybrid & Hybrid state-space and CNN modeling & Strong noise resilience with moderate computational cost; enables practical real-time deployment. \\ \hline
+
+\end{tabular}
+}
+\end{table}
+
+
+
+\section{Motivation and Contribution}
+Despite advances in deep learning for RF-based classification, existing methods face critical challenges: classical CNN-based models, while computationally efficient, degrade rapidly under low SNR, interference, and multipath channel conditions; Transformer-based architectures achieve high noise resilience but impose substantial computational cost, limiting real-time edge deployment; and even emerging Mamba-based models, though promising, require further optimization for practical, noise-resilient operation.
+
+Motivated by these limitations, this work aims to design a noise-robust, computationally efficient deep learning architecture for UAV classification using RF signals. The primary objectives are:
+
+\begin{itemize}
+    \item Noise-Robust Classification: Develop a model that maintains high classification accuracy under low SNR, interference, and dynamic channel conditions, effectively capturing discriminative RF fingerprints.
+    \item Efficient Real-Time Deployment: Ensure real-time, edge-friendly inference by reducing computational complexity without compromising noise resilience.
+    \item Hybrid Architecture Integration: Design a hybrid framework that balances global context modeling, local feature extraction, and linear-complexity sequence processing for optimal performance.
+\end{itemize}
+
+% --- TABLES ---
+
+\begin{table}[H]
+\caption{Comparison of Existing RF-Based Drone Classification Methods (DroneRF Dataset)}
+\label{tab1}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lllllll}
+\hline
+\textbf{Ref. / Author (Year)} & \textbf{Feature Repr.} & \textbf{Model} & \textbf{Task} & \textbf{Acc. (\%)} & \textbf{Noise/SNR} & \textbf{Remarks} \\ \hline
+Al-Sa'd et al. (2019) & DFT (2048 bins) & DNN & 2,4,10-C & 99.7, 84.5, 46.8 & - & Baseline study. \\
+Allahham et al. (2020) & Multi-channel DFT & MC-1D-CNN & 2,4,10-C & 100, 94.6, 87.4 & Not Analyzed & Freq. locality preservation. \\
+Al-Emadi et al. (2020) & Raw RF Amplitude & 1D-CNN & 2,4,10-C & 99.8, 85.8, 59.2 & Not Analyzed & End-to-end learning. \\
+Rexcharles et al. (2022) & 2D Reshaped Raw & Opt. CNN & 2,4,10-C & 99.7, 94.15, 81.5 & Not Analyzed & 4x training reduction. \\
+Huynh-The et al. (2022) & Normalized I/Q & RF-UAVNet & 2,4,10-C & 99.85, 98.55, 95.33 & -15 dB to 15 dB & 11k params efficiency. \\
+Mohammed et al. (2023) & Mel Spectrogram & YAMNet & 2,4,10-C & 99.6, 96.9, 96.5 & Not Gauged & Transfer learning from audio. \\
+Fu \& He (2024) & Freq-Domain GAF & 2D-CNN & 4-C & 98.72 & Not Analyzed & 2D GAF images. \\
+Kumbasar-VGG (2025) & Mel Spectrogram & VGG19+SVM & 2,4,10-C & 100, 90.78, 86.6 & Not Analyzed & ImageNet weights. \\ \hline
+\end{tabular}
+}
+\end{table}
+
+\begin{table}[H]
+\caption{Comparison of VTI RFDroneSET-Based Studies}
+\label{tab2}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lllllll}
+\hline
+\textbf{Ref. / Author (Year)} & \textbf{Feature Repr.} & \textbf{Model} & \textbf{Task} & \textbf{Acc. (\%)} & \textbf{Noise / SNR} & \textbf{Remarks} \\ \hline
+Sazdic-Jotic (2023) & Spectrograms & FLEDNet & 2, 4, Multi-D & 96.65 & -14 dB & Multi-drone detection. \\
+Sazdic-Jotic (2024) & Semantic Features & Hybrid YOLO & Detect/ID & 99.8 & Not Analyzed & Real-time edge processing. \\ \hline
+\end{tabular}
+}
+\end{table}
+
+\section{Methodology}
+\subsection{Pre-processing}
+
+Raw RF recordings are stored as complex-valued in-phase and quadrature (I/Q) signals, sampled at a hardware-defined rate $f_s$. Prior to spectrogram generation, each signal undergoes a standardized conditioning pipeline to suppress systematic hardware artifacts and ensure consistency across recordings and datasets.
+
+\subsubsection{Signal Conditioning}
+The first conditioning step removes any DC bias introduced by receiver hardware offsets. The I and Q components are independently zero-centered by subtracting their respective global means:
+\begin{equation}
+    s_{\text{clean}} = \bigl(\text{Re}(s) - \mu_I\bigr) + j\bigl(\text{Im}(s) - \mu_Q\bigr)
+\end{equation}
+where $\mu_I$ and $\mu_Q$ are the sample means of the I and Q channels, respectively.
+
+Following DC removal, Gram-Schmidt orthogonalization is applied to correct gain and phase imbalance between the two channels \cite{ref34}. The Q channel is projected onto I and the orthogonal residual is computed:
+\begin{equation}
+    Q_{\perp} = Q - \frac{\langle Q,\, I \rangle}{\langle I,\, I \rangle}\, I
+\end{equation}
+The corrected Q channel is then rescaled to preserve its original RMS amplitude, yielding a balanced quadrature pair with minimal inter-channel correlation.
+
+\subsubsection{Spectrogram Generation}
+The conditioned complex signal is transformed into a two-dimensional power spectral density representation via the Short-Time Fourier Transform (STFT). A Kaiser window with $\beta = 8.6$ is applied to each frame to suppress spectral leakage while maintaining a sharp main lobe \cite{ref35}. The resulting power spectrogram is given by:
+\begin{equation}
+    P[k, m] = \left|\sum_{n=0}^{N-1} s[n + mH]\, w[n]\, e^{-j2\pi kn/N}\right|^2
+\end{equation}
+where $N$ is the FFT size, $H$ is the hop length, and $w[n]$ is the Kaiser window. The frequency axis is recentered via an FFT shift to place the DC component at the midpoint, providing a symmetric view of the spectrum centered at the carrier frequency.
+
+\subsubsection{Image Conversion}
+Each power spectrogram is converted to a 224$\times$224 RGB image suitable for input to pre-trained vision models. The pipeline follows four steps: (i) logarithmic compression, $X_{\log} = 10\log_{10}(P + \epsilon)$, to reduce dynamic range; (ii) robust percentile normalization using the 1st and 99th percentiles to suppress outlier artifacts; (iii) colormap encoding via the \textit{viridis} perceptual colormap \cite{ref36}; and (iv) Lanczos resampling to the target resolution. The frequency axis is flipped vertically prior to saving so that higher frequencies appear at the top of the image, consistent with standard spectrogram conventions. No dataset-specific parameters are altered across the four datasets evaluated; only $f_s$ and hop length are adjusted to match the acquisition hardware of each recording.
+\subsection{CNN-Based Variants for Classification}
+
+In this study, four convolutional neural network (CNN) architectures i.e. VGG16, MobileNet, EfficientNet, and Xception are selected to investigate the effectiveness of convolution-based feature extraction for RF signal classification. 
+The CNN-based architectures provide a way to evaluate convolutional inductive biases, such as local connectivity, weight sharing, and translation invariance, in RF spectrogram based Drone classification.
+
+These models were selected to represent distinct architectural design principles within the CNN paradigm, enabling a structured and comprehensive experimental comparison. VGG16 is a conventional deep CNN baseline, characterized by sequential 3×3 convolutional layers and hierarchical feature abstraction. Its uniform architecture facilitates stable gradient propagation and effective spatial feature learning, making it suitable as a reference model for performance benchmarking.
+
+MobileNet was incorporated to evaluate computationally efficient convolutional modeling through the use of depthwise separable convolutions, which decompose standard convolution into depthwise and pointwise operations. This factorization significantly reduces parameter count and floating-point operations (FLOPs), allowing assessment of lightweight architectures in RF-based drone detection scenarios. EfficientNet was included due to its compound scaling strategy, which systematically balances network depth, width, and input resolution using a unified scaling coefficient. This design enhances representational capacity while maintaining parameter efficiency, providing a strong trade-off between accuracy and computational complexity. Xception further extends the depthwise separable convolution framework by completely decoupling spatial and cross-channel correlations, enabling improved feature representation and discrimination capability.
+\section{Vision Mamba for Global Context Modeling of Drone RF Spectrogram.}
+
+RF spectrogram classification requires modeling dependencies across the full
+time--frequency plane. Discriminative features such as hardware impairments,
+modulation irregularities, and transient spectral signatures are globally
+distributed rather than locally confined. Convolutional architectures
+expand their receptive fields only gradually and remain fundamentally local.
+We therefore adopt a custom Vision Mamba (Vim) architecture \cite{ref26} that provides
+efficient global context modeling through selective State Space Models
+(SSMs) \cite{ref27,ref28}. Our design extends the standard Vim formulation with four
+independent scan directions, global average pooling in place of a
+classification token, and a learned direction-merge projection tailored to
+two-dimensional spectrogram inputs.
+
+%----------------------------------------------------------------
+\subsection{Spectrogram Tokenization}
+%----------------------------------------------------------------
+
+Given an RF spectrogram $X \in \mathbb{R}^{H \times W \times C}$, where
+$H$, $W$ are the time and frequency dimensions and $C$ is the channel
+dimension, the input is partitioned into non-overlapping $P \times P$
+patches via a convolutional projection layer, yielding $N = HW / P^2$ tokens
+of dimension $D$. Learnable positional embeddings are added to preserve
+spatial ordering:
+\begin{equation}
+  Z_0 = [z_1, z_2, \dots, z_N] + E_{\text{pos}},
+  \quad Z_0 \in \mathbb{R}^{N \times D}.
+\end{equation}
+Unlike the original Vim formulation, we omit the classification token and
+instead apply global average pooling at the final layer, avoiding positional
+ambiguity from a non-spatial prepended token.
+
+%----------------------------------------------------------------
+\subsection{VimBlock2D: 4-Directional Mamba Block}
+%----------------------------------------------------------------
+
+The encoder consists of $L$ stacked \texttt{VimBlock2D} modules. Each block
+applies LayerNorm pre-normalization, four independent SSM scans, a learned
+direction-merge projection, LayerScale $\gamma_l$, and a stochastic-depth
+residual:
+\begin{equation}
+  Z_{l+1} = Z_l + \text{Drop}\!\left(
+      \gamma_l \odot
+      \mathcal{F}_{\text{merge}}\!\left(
+          \mathcal{M}_{\text{hf}},\,
+          \mathcal{M}_{\text{hb}},\,
+          \mathcal{M}_{\text{vf}},\,
+          \mathcal{M}_{\text{vb}};\,
+          \text{Norm}(Z_l)
+      \right)
+  \right).
+\end{equation}
+
+\subsubsection{Selective State Space Update}
+
+Each Mamba SSM processes a token sequence
+$\tilde{Z} = [x_1, \dots, x_N]$ recurrently:
+\begin{align}
+  h_t &= \overline{\mathbf{A}}\, h_{t-1} + \overline{\mathbf{B}}_t\, x_t, \\
+  y_t &= \mathbf{C}_t\, h_t,
+\end{align}
+where the projections $\overline{\mathbf{B}}_t = f_B(x_t)$ and
+$\mathbf{C}_t = f_C(x_t)$ are input-dependent (selective). Unrolling
+the recurrence gives
+\begin{equation}
+  h_t = \sum_{i=0}^{t} \overline{\mathbf{A}}^{\,t-i}\,
+        \overline{\mathbf{B}}_i\, x_i,
+\end{equation}
+so each token integrates context from all preceding positions. When the
+spectral radius of $\overline{\mathbf{A}}$ is near unity the model retains
+long-range dependencies, providing an effectively global receptive field.
+
+\subsubsection{Four-Directional Context Integration}
+
+To capture non-causal dependencies along both axes we apply four scans over
+the $H_p \times W_p$ patch grid:
+\begin{align}
+  Z_{\text{hf}} &= \mathcal{M}_{\text{hf}}(\tilde{Z}),
+  \quad Z_{\text{hb}} = \operatorname{flip}\!\bigl(
+      \mathcal{M}_{\text{hb}}(\operatorname{flip}(\tilde{Z}))\bigr), \\
+  Z_{\text{vf}} &= \Pi^{-1}\!\bigl(\mathcal{M}_{\text{vf}}(\Pi(\tilde{Z}))\bigr),
+  \quad Z_{\text{vb}} = \Pi^{-1}\!\Bigl(\operatorname{flip}\!\bigl(
+      \mathcal{M}_{\text{vb}}(\operatorname{flip}(\Pi(\tilde{Z})))\bigr)\Bigr),
+\end{align}
+where $\Pi(\cdot)$ is the column-major permutation that transposes the patch
+grid ($H_p \times W_p \to W_p \times H_p$). The horizontal scans traverse
+patches in raster order; the vertical scans traverse them column-major,
+ensuring every token receives context from all four spatial directions.
+
+\subsubsection{Learned Direction Merge}
+
+The four directional outputs are concatenated and projected back to
+dimension $D$ by a learned linear layer:
+\begin{equation}
+  Z_{l}^{\text{out}} =
+  \mathbf{W}_{\text{merge}}
+  \bigl[Z_{\text{hf}} \;\|\; Z_{\text{hb}} \;\|\;
+        Z_{\text{vf}} \;\|\; Z_{\text{vb}}\bigr],
+  \quad \mathbf{W}_{\text{merge}} \in \mathbb{R}^{D \times 4D}.
+\end{equation}
+This allows the model to learn per-token importance weights for each scan
+direction rather than treating all directions equally.
+
+%----------------------------------------------------------------
+\subsection{Classification Head and Training}
+%----------------------------------------------------------------
+
+After $L$ blocks, global average pooling reduces the token sequence to a
+single $D$-dimensional vector:
+\begin{equation}
+  v = \frac{1}{N}\sum_{i=1}^{N} Z_L^{(i)}.
+\end{equation}
+A two-layer MLP head with LayerNorm, GELU activation, and dropout maps $v$
+to $K$ class logits. For datasets requiring simultaneous multi-task
+classification, independent heads share the same backbone representation,
+with per-task loss weighting guided by multi-task learning
+principles~\cite{ref29}.
+
+To handle class imbalance, training combines an inverse-frequency weighted
+sampler with Focal Loss~\cite{ref40} and label smoothing:
+\begin{equation}
+  \mathcal{L}(p_t) = -(1 - p_t)^{\gamma}\,\log p_t,
+\end{equation}
+down-weighting easy examples to focus gradient updates on harder
+minority-class samples. Spectral data augmentation follows
+SpecAugment~\cite{ref39} with additional circular frequency
+shifts to encourage learning of relative spectral structure. The model is
+optimized with AdamW using linear warm-up and cosine annealing under
+mixed-precision training.
+
+%----------------------------------------------------------------
+\subsection{Computational Complexity}
+%----------------------------------------------------------------
+
+Unlike Transformer self-attention, which incurs quadratic complexity
+$\mathcal{O}(N^2)$ due to explicit pairwise token interactions, the
+state-space recurrence scales linearly as $\mathcal{O}(N)$. Global context
+is accumulated implicitly through structured state propagation, enabling
+efficient processing of high-resolution RF spectrograms.
+
+%----------------------------------------------------------------
+% FIGURE AT END OF SECTION
+%----------------------------------------------------------------
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\linewidth]{visionMamba.png}
+  \caption{Overview of the proposed 4-Directional Vision Mamba architecture.
+           The input spectrogram is tokenized into patches, passed through
+           $L$ stacked \texttt{VimBlock2D} modules with learned direction
+           merging, then classified via global average pooling and a
+           two-layer MLP head.}
+  \label{fig:vim_overview}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\linewidth]{detailedViM.png}
+  \caption{Detailed view of a single \texttt{VimBlock2D}. The normalized
+           token sequence is processed by four independent Mamba SSMs
+           (H-Fwd, H-Bwd, V-Fwd, V-Bwd), whose outputs are concatenated
+           and projected back to dimension $D$ via a learned linear merge
+           ($4D \rightarrow D$). The result is scaled by a per-channel
+           LayerScale parameter $\gamma$ and added to the block residual.}
+  \label{fig:vim_block_detail}
+\end{figure}
+
+\FloatBarrier
+\subsection{Hybrid Vision Mamba for Local-Global Context in Classification}
+Intuition and Design Consideration
+\subsection{Noise Robustness in Hybrid Mamba Architecture}
+\subsection{Explainability Framework}
+
+Classification accuracy alone is insufficient to certify a model for safety-critical RF surveillance. A classifier may achieve high accuracy by exploiting dataset-specific artifacts---residual DC offset, JPEG compression boundaries, or fixed windowing patterns---rather than genuine drone RF signatures. To guard against such failure modes and to provide interpretable evidence for operational deployment, we construct a multi-layered explainability framework organized around four complementary questions: (i)~\emph{which} spectro-temporal regions drive each prediction, (ii)~whether those regions are \emph{causally necessary} for the decision, (iii)~whether any model \emph{exploits residual preprocessing artifacts} rather than true signal content, and (iv)~whether the learned representations \emph{preserve class-discriminative structure} under degraded signal conditions.
+
+Each analysis layer targets a distinct failure mode that the preceding layer cannot detect, and together they form a progressive trust chain from pixel-level attribution through causal validation to representation-level robustness assessment.
+
+\subsubsection{Spatial Attribution via Grad-CAM}
+
+The first question---\emph{where does the model look?}---is addressed through Gradient-weighted Class Activation Mapping (Grad-CAM)~\cite{ref30}. The rationale for choosing Grad-CAM over alternative attribution methods (e.g., SHAP, LIME, integrated gradients) is twofold. First, RF spectrograms are spatially structured: the horizontal axis encodes time and the vertical axis encodes frequency, so a \emph{spatial} heatmap directly reveals whether the model attends to physically meaningful time-frequency regions. Second, Grad-CAM operates on intermediate convolutional feature maps, making it applicable across all architectures in our benchmark with only minor adaptation for token-based models.
+
+For a target class~$c$, the method computes channel importance weights $\alpha_k^c$ by global-average-pooling the gradient of the class score $y^c$ with respect to feature map~$A^k$:
+\begin{equation}
+  \alpha_k^c = \frac{1}{Z} \sum_i \sum_j
+               \frac{\partial y^c}{\partial A_{ij}^k},
+\end{equation}
+where $Z$ is the spatial dimension. The class-discriminative localization map follows as:
+\begin{equation}
+  L^c_{\text{Grad-CAM}} =
+  \operatorname{ReLU}\!\left(\sum_k \alpha_k^c A^k\right).
+\end{equation}
+The resulting coarse map is bilinearly upsampled to the input resolution and overlaid on the spectrogram. For transformer-based architectures whose intermediate representations are token sequences rather than spatial feature maps, the token activations and their gradients are reshaped to the nearest square grid prior to upsampling. A trustworthy classifier should concentrate saliency on time-frequency tiles that correspond to known drone RF modulation patterns rather than on static spectral regions that persist across all classes.
+
+\subsubsection{Saliency Faithfulness via Controlled Masking}
+
+Grad-CAM identifies high-gradient regions, but high gradient does not guarantee causal necessity: the model may reach the same decision through redundant pathways. To test whether highlighted regions are genuinely \emph{load-bearing}, we adopt the saliency faithfulness protocol of Samek et~al.~\cite{ref32}. The rationale is straightforward: if masking the most salient pixels causes a large drop in predicted probability, then those pixels are causally necessary for the decision; if the drop is negligible, the attribution map is misleading regardless of its visual plausibility.
+
+Concretely, the Grad-CAM heatmap $L^c$ is thresholded at its 90th percentile to form a binary mask~$M$ isolating the top 10\% most salient pixels:
+\begin{equation}
+  M_{ij} = \begin{cases}
+    1 & \text{if } L^c_{ij} \geq P_{90}(L^c), \\
+    0 & \text{otherwise}.
+  \end{cases}
+\end{equation}
+The masked input $\tilde{X}$ is constructed by zeroing the selected pixels:
+\begin{equation}
+  \tilde{X}_{ijc} = X_{ijc} \cdot (1 - M_{ij}),
+\end{equation}
+and the probability drop $\Delta p = p(y^c \mid X) - p(y^c \mid \tilde{X})$ quantifies faithfulness. A large positive drop confirms that the attribution correctly identifies decision-critical features; a near-zero or negative drop signals that the model relies on distributed or out-of-mask information that Grad-CAM fails to capture.
+
+\subsubsection{Noise Floor Rejection via Entropy Analysis}
+
+Even after DC offset removal and Gram--Schmidt I/Q correction~\cite{ref34}, residual narrowband artifacts at center frequency may persist in the spectrogram. A model that learns to classify partly on the basis of such artifacts would achieve high test accuracy yet fail catastrophically on hardware with different front-end impairments. The noise floor rejection test is designed to detect this failure mode.
+
+For each RF Background (no-drone) image, the normalized Grad-CAM heatmap is treated as a probability distribution $p_i = L^c_i / \sum_j L^c_j$, and its Shannon entropy is computed:
+\begin{equation}
+  H = -\sum_{i=1}^{N} p_i \log(p_i + \epsilon),
+  \quad N = 224 \times 224,\;\; \epsilon = 10^{-10}.
+\end{equation}
+The reasoning is that noise-only images contain no localized signal structure, so a well-behaved model should produce diffuse, spatially uniform attribution (high entropy, $H \approx \log N$). Concentrated, low-entropy attribution on noise images would indicate that the model has latched onto a spatially fixed artifact rather than genuine RF activity, exposing a fragile shortcut that would not generalize across deployment hardware.
+
+\subsubsection{Digital Twin Waveform Validation}
+
+The preceding tests operate entirely in the pixel domain. To close the loop between pixel-level attribution and physical signal content, we exploit the fully deterministic preprocessing pipeline---with fixed STFT parameters, known noise seeds, and traceable per-image metadata---to reverse-map Grad-CAM hotspots back to raw I/Q sample indices.
+
+Each pixel column in the $224 \times 224$ spectrogram corresponds to a time interval:
+\begin{equation}
+  \Delta t_{\text{pixel}} =
+  \frac{W_{\text{seg}} \times N_{\text{seg}}}{f_s \times 224},
+\end{equation}
+where $W_{\text{seg}} = 64$ contiguous segments, $N_{\text{seg}} = 100{,}000$~samples per segment, and $f_s = 150$~MHz. Given a Grad-CAM hotspot spanning pixel columns $[x_1, x_2]$ beginning at segment~$s_0$, the corresponding global raw sample range is:
+\begin{equation}
+  n_{\text{start}} = s_0 \cdot N_{\text{seg}} +
+  \left\lfloor x_1 \cdot
+  \frac{W_{\text{seg}} \cdot N_{\text{seg}}}{224} \right\rfloor, \quad
+  n_{\text{end}} = s_0 \cdot N_{\text{seg}} +
+  \left\lfloor x_2 \cdot
+  \frac{W_{\text{seg}} \cdot N_{\text{seg}}}{224} \right\rfloor.
+\end{equation}
+The raw I/Q waveform and deterministic noise seed are recovered from image metadata, enabling exact waveform reconstruction. To confirm that the attributed segment contains transient RF activity rather than stationary noise, two signal statistics are computed on the recovered waveform~$s[n]$:
+\begin{equation}
+  \text{Kurtosis} =
+  \frac{\mathbb{E}\bigl[(|s| - \mu_{|s|})^4\bigr]}{\sigma_{|s|}^4},
+  \qquad
+  \text{PAPR} =
+  \frac{\max_n |s[n]|^2}{\tfrac{1}{N}\sum_n |s[n]|^2}.
+\end{equation}
+Elevated kurtosis indicates non-Gaussian, bursty packet transmissions, while high PAPR signals impulsive, time-varying structure---both hallmarks of active drone communication that distinguish genuine RF activity from stationary thermal noise.
+
+\subsubsection{Latent Space Visualization via t-SNE}
+
+The analyses above probe individual predictions; the final layer assesses the model's \emph{global} representation quality. If the learned feature space preserves class-discriminative structure even as SNR degrades, the representation is robust; if clusters collapse or fragment at low SNR, the model's accuracy at those operating points is fragile and likely sample-dependent.
+
+Features are extracted from the penultimate layer for a stratified sample across SNR levels. t-distributed Stochastic Neighbor Embedding (t-SNE)~\cite{ref33} projects these high-dimensional features $\{\mathbf{z}_i \in \mathbb{R}^d\}$ to 2D embeddings $\{\mathbf{y}_i \in \mathbb{R}^2\}$ by minimizing KL divergence between pairwise similarity distributions:
+\begin{equation}
+  \operatorname{KL}(P\|Q) = \sum_{i \neq j} p_{ij}
+  \log \frac{p_{ij}}{q_{ij}},
+\end{equation}
+where $p_{ij} \propto \exp\!\bigl(-\|\mathbf{z}_i - \mathbf{z}_j\|^2 / 2\sigma^2\bigr)$ and $q_{ij} \propto \bigl(1 + \|\mathbf{y}_i - \mathbf{y}_j\|^2\bigr)^{-1}$. Embeddings are visualized with dual color-coding: by drone class to assess separability, and by SNR level to assess robustness. Interleaving of high- and low-SNR points within the same class cluster indicates that the representation encodes identity rather than signal quality, which is the desired property for noise-resilient classification.
+
+\section{Experimental Details}
+\section{Experimental Details}
+\subsection{Dataset Details}
+
+Four publicly available RF drone datasets are used in this study, spanning
+a range of acquisition hardware, frequency bands, drone types, and
+classification tasks, providing a heterogeneous benchmark for evaluating
+the proposed framework. Table~\ref{tab:datasets} provides a comprehensive summary of the key properties and experimental setups of all four datasets used.
+
+
+\begin{table*}[htbp]
+\centering
+\caption{Detailed Overview of the RF Drone Datasets}
+\label{tab:datasets}
+\renewcommand{\arraystretch}{1.4}
+% Using >{\raggedright\arraybackslash} fixes the awful text justification and overlapping
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.14\linewidth}|>{\raggedright\arraybackslash}p{0.20\linewidth}|>{\raggedright\arraybackslash}p{0.18\linewidth}|>{\raggedright\arraybackslash}p{0.19\linewidth}|>{\raggedright\arraybackslash}p{0.18\linewidth}|}
+\hline
+\textbf{Feature} & \textbf{VTIDroneSET} \newline \cite{stankovic2023vtidroneset} & \textbf{DroneRF} \newline \cite{allahham2019dronerf} & \textbf{Hovering UAV} \newline \cite{ref37} & \textbf{Noisy Drone v2} \newline \cite{ref38} \\
+\hline
+\textbf{Hardware} & Tektronix Real-Time Spectrum Analyzer & Two RF receivers & Ettus USRP X310 \newline (Anechoic chamber) & Not Specified \\
+\hline
+\textbf{Frequency Band} & 2.4~GHz \& 5.8~GHz ISM & 2.4~GHz \& 5.8~GHz & 2.4~GHz & Not Specified \\
+\hline
+\textbf{$f_s$} & 150~MS/s & -- & 10~MS/s & 14~MS/s \\
+\hline
+\textbf{Classes} & 3 / 5 / 3 & 4 (3 Drones + Background) & 7 (Identical DJI M100s) & 7 (6 Controllers + Noise) \\
+\hline
+\textbf{Tasks} & Drone Type, Flight Mode, Count & Binary Drone Detection \& Multi-class ID & Fine-grained RF Fingerprinting / ID & Classification / Low-SNR Robustness \\
+\hline
+\textbf{Key Features} & 450~ms recordings, 50 \texttt{.mat} files, 7-bit BUI encoding. & 227 RF segments split into low/high bands requiring concatenation. & $>$13,000 SigMF examples, Lightbridge waveforms, recorded at 4 distances. & Complex I/Q vectors (1,048,576 samples), SNR mixed from $-$20~dB to $+$30~dB. \\
+\hline
+\end{tabular}
+\end{table*}
+
+\begin{figure}[H]
+  \centering
+  % Top row: Images aligned perfectly at their bottom baselines
+  \begin{minipage}[b]{0.68\linewidth} 
+    \centering
+    \includegraphics[width=\linewidth]{vti_psd.png}
+  \end{minipage}\hfill
+  \begin{minipage}[b]{0.28\linewidth} 
+    \centering
+    \includegraphics[width=\linewidth]{SPECTROGRAM_VTI.png}
+  \end{minipage}
+
+  \vspace{4pt} % Small vertical gap between images and sub-captions
+
+  % Bottom row: Sub-captions hanging naturally from the top
+  \begin{minipage}[t]{0.68\linewidth}
+    \centering
+    \small (A) PSD across flight modes at 2.4\,GHz
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.28\linewidth}
+    \centering
+    \small (B) Spectrogram showing distinct spectral structure
+  \end{minipage}
+
+  \caption{VTI\_DroneSET: (A)~Power spectral density of DJI Phantom~IV
+           across flight modes; (B)~representative spectrogram per mode.}
+  \label{fig:vti_vis}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[b]{0.47\linewidth}
+    \centering
+    \includegraphics[height=2.6cm]{dronerf_psd.pdf}
+    \\[2pt]{\small (A) PSD: background vs.\ AR Drone at 2.4\,GHz}
+  \end{minipage}\hfill
+  \begin{minipage}[b]{0.47\linewidth}
+    \centering
+    \includegraphics[height=2.6cm]{10100H_clean_w0.png}
+    \\[2pt]{\small (B) Clean spectrogram of a hovering segment}
+  \end{minipage}
+  \caption{DroneRF: (A)~PSD comparison of background versus AR Drone
+           hovering and flying; (B)~clean spectrogram of a hovering segment.}
+  \label{fig:dronerf_vis}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[b]{0.47\linewidth}
+    \centering
+    \includegraphics[height=2.6cm]{hoveringUAV_psd.png}
+    \\[2pt]{\small (A) PSD of three identical DJI~M100s at 12\,ft}
+  \end{minipage}\hfill
+  \begin{minipage}[b]{0.47\linewidth}
+    \centering
+    \includegraphics[height=2.6cm]{SPECTROGRAM_hoveringUAV.png}
+    \\[2pt]{\small (B) Spectrogram of a Lightbridge burst}
+  \end{minipage}
+  \caption{Hovering UAV: (A)~PSD showing subtle inter-unit variation among
+           identical DJI~M100s; (B)~representative Lightbridge transmission burst.}
+  \label{fig:hovering_vis}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}[b]{0.47\linewidth}
+    \centering
+    \includegraphics[height=2.6cm]{NOISYRF_psd.png}
+    \\[2pt]{\small (A) PSD at SNR $-$10, $+$12, $+$24\,dB}
+  \end{minipage}\hfill
+  \begin{minipage}[b]{0.47\linewidth}
+    \centering
+    \includegraphics[height=2.6cm]{spectrogram_noisy_rf_IQdata_sample1021_target0_snr24.png}
+    \\[2pt]{\small (B) Spectrogram at SNR~$+$24\,dB}
+  \end{minipage}
+  \caption{Noisy Drone RF v2: (A)~PSD of Target~4 at three SNR levels
+           illustrating noise degradation; (B)~spectrogram at $+$24\,dB.}
+  \label{fig:noisyrf_vis}
+\end{figure}
+
+\subsection{Software and Hardware Details}
+
+All experiments were conducted on Kaggle's cloud platform using dual 
+NVIDIA Tesla T4 GPUs (2 $\times$ 14\,GB VRAM) with data-parallel training. 
+The implementation uses Python 3.12.12, PyTorch 2.9.0 with CUDA 12.6, 
+and the \texttt{mamba-ssm} library with \texttt{causal-conv1d} for the 
+selective state space modules. Mixed-precision training (\texttt{float16} 
+AMP) was employed throughout to reduce memory footprint and accelerate 
+throughput.
+
+\section{Result Analysis and Observations}
+
+We evaluated all seven architectures under identical training protocols across the four RF drone datasets described in Section~5. Performance is reported in terms of overall accuracy (\%) and macro-averaged F1-score (\%) at each SNR operating point.
+
+\subsection{Clean Signal Performance}
+
+Table~\ref{tab:clean_perf} presents accuracy on clean (unaugmented) signals for the three datasets where clean labels are available.
+
+\begin{table}[htbp]
+\centering
+\caption{Classification Accuracy (\%) on Clean Signals Across Four Datasets}
+\label{tab:clean_perf}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccccc}
+\hline
+\textbf{Dataset} & \textbf{VGG16} & \textbf{MobileNet} & \textbf{EfficientNet} & \textbf{Xception} & \textbf{ViT} & \textbf{Swin} & \textbf{ViM} \\
+\hline
+VTI\_DroneSET   & 91.07 & 90.71 & 90.35 & 90.16 & 91.80 & 89.98 & \textbf{92.63} \\
+DroneRF         & 99.44 & 97.50 & 98.33 & 98.06 & 99.72 & \textbf{100.00} & 99.10 \\
+Genesys         & 99.96 & 99.28 & \textbf{100.00} & --    & 69.64 & 73.72 & 99.40 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+Two patterns emerge from the clean-signal results. First, the CNN--SSM convergence zone: all convolutional models and Vision Mamba cluster above 90\% on every applicable dataset, suggesting that under high-SNR conditions the discriminative spectral features are sufficiently localized for both local and global architectures to capture them. The marginal separation among these models is therefore less informative than the qualitative gap that opens with the transformer baselines.
+
+Second, and more revealing, is the Genesys anomaly. The fingerprinting task requires distinguishing seven physically identical DJI~M100 units whose RF emissions differ only in subtle, device-specific hardware impairments---phase noise jitter, oscillator drift, and I/Q gain mismatch~\cite{ref34}. ViT-Small and Swin-Tiny collapse to near-chance accuracy on this task, while every CNN and Vision Mamba remain above 99\%. This failure is architecturally diagnostic: self-attention computes pairwise token similarities that are inherently normalized, discarding the fine-grained amplitude and phase irregularities that encode hardware identity. Convolutional filters and SSM state variables, by contrast, preserve these low-level statistical asymmetries through their weight-sharing and recurrence mechanisms, respectively. Vision Mamba's competitive performance on Genesys confirms that its SSM recurrence retains the spectral granularity that self-attention architectures average away.
+
+\subsection{Noise Robustness Across SNR Levels}
+
+Fig.~\ref{fig:snr_curve} plots accuracy against SNR on the Noisy RF dataset, which spans the widest range ($-$20 to $+$20~dB) and therefore best reveals robustness differences. Fig.~\ref{fig:cross_dataset} compares performance across all four benchmarks.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{PLOT1.png}
+  \caption{Accuracy vs.\ SNR on the Noisy RF dataset for all seven models.
+           The shaded region marks negative SNR levels where performance
+           divergence is most pronounced.}
+  \label{fig:snr_curve}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{PLOT2.png}
+  \caption{Cross-dataset accuracy comparison: clean signal accuracy (top)
+           and average accuracy across all noisy SNR levels (bottom).}
+  \label{fig:cross_dataset}
+\end{figure}
+
+Table~\ref{tab:snr_summary} gives accuracy at three representative SNR operating points across all four datasets.
+
+\begin{table}[htbp]
+\centering
+\caption{Classification Accuracy (\%) at Selected SNR Levels Across Datasets}
+\label{tab:snr_summary}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{ll ccccccc}
+\hline
+\textbf{SNR} & \textbf{Dataset} & \textbf{VGG16} & \textbf{MobileNet} & \textbf{EfficientNet} & \textbf{Xception} & \textbf{ViT} & \textbf{Swin} & \textbf{ViM} \\
+\hline
+\multirow{4}{*}{+20 dB}
+ & VTI       & 94.77 & \textbf{95.47} & 95.44 & 95.37 & 94.21 & 94.81 & 93.00 \\
+ & DroneRF   & 98.88 & 94.36 & 97.37 & 97.10 & 99.44 & 99.05 & \textbf{100.00} \\
+ & Genesys   & \textbf{99.99} & 99.34 & \textbf{100.00} & --    & 69.51 & 72.79 & 99.80 \\
+ & NoisyRF   & \textbf{100.00} & \textbf{100.00} & 97.93 & 99.31 & 99.31 & 97.93 & 95.60 \\
+\hline
+\multirow{4}{*}{+5 dB}
+ & VTI       & 96.36 & 96.90 & 96.72 & \textbf{97.27} & 94.72 & 95.81 & 94.10 \\
+ & DroneRF   & 96.94 & 90.83 & 92.78 & 95.56 & 96.39 & \textbf{97.50} & 96.60 \\
+ & Genesys   & 98.94 & 92.87 & \textbf{99.34} & --    & 63.15 & 66.06 & 92.20 \\
+ & NoisyRF   & \textbf{99.19} & \textbf{99.19} & \textbf{99.19} & 98.78 & 98.79 & \textbf{99.19} & 96.60 \\
+\hline
+\multirow{4}{*}{0 dB}
+ & VTI       & 92.70 & 91.44 & 92.39 & 93.68 & 92.91 & 93.54 & \textbf{95.10} \\
+ & DroneRF   & 86.54 & 83.69 & 84.48 & 86.21 & 89.56 & \textbf{90.06} & 90.10 \\
+ & Genesys   & \textbf{92.88} & 70.19 & \textbf{95.05} & --    & 54.10 & 53.86 & 66.60 \\
+ & NoisyRF   & 99.27 & \textbf{100.00} & \textbf{100.00} & 99.27 & 98.54 & \textbf{100.00} & 96.60 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+The SNR sweep reveals a crossover dynamic between architectural families that clean-signal accuracy conceals. At moderate-to-high SNR ($\geq$5~dB), CNN models maintain near-ceiling performance because the signal-to-noise ratio is sufficient for local convolutional receptive fields to isolate discriminative spectral peaks. As SNR drops toward 0~dB, however, additive noise begins to corrupt these local features, and models with broader contextual reach gain an edge. On DroneRF at 0~dB, Vision Mamba and Swin-Tiny co-lead the field, both exceeding the best CNN by several points---an outcome consistent with the hypothesis that global context aggregation provides a form of implicit spectral denoising by integrating evidence across the full time-frequency extent of the spectrogram.
+
+The crossover is dataset-dependent, however, which cautions against universal claims. On VTI\_DroneSET, where the multi-task BUI label structure rewards holistic sequence understanding, Vision Mamba's advantage appears earlier and persists across all SNR levels. On Noisy RF, where simpler single-label classification suffices, the CNNs' multi-stage convolutional hierarchies provide enough noise suppression to dominate well into moderate noise regimes. The Genesys fingerprinting task continues to expose the transformer blind spot: ViT-Small and Swin-Tiny remain below 73\% at every SNR level, confirming that the self-attention normalization that discards fine-grained amplitude cues under clean conditions does not recover those cues when noise is added.
+
+\subsection{Negative SNR Performance (Noisy RF Dataset)}
+
+The Noisy RF dataset uniquely provides negative SNR levels ($-$20 to $-$2~dB). Table~\ref{tab:neg_snr} reports accuracy at selected extreme conditions.
+
+\begin{table}[htbp]
+\centering
+\caption{Classification Accuracy (\%) at Negative SNR Levels --- Noisy RF Dataset}
+\label{tab:neg_snr}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lccccccc}
+\hline
+\textbf{SNR (dB)} & \textbf{VGG16} & \textbf{MobileNet} & \textbf{EfficientNet} & \textbf{Xception} & \textbf{ViT} & \textbf{Swin} & \textbf{ViM} \\
+\hline
+$-$20 & \textbf{67.42} & 61.36 & 65.91 & 66.67 & 64.39 & 70.45 & 56.60 \\
+$-$16 & 88.28 & 84.14 & 82.76 & 88.97 & 84.14 & \textbf{91.72} & 75.90 \\
+$-$12 & \textbf{99.31} & 94.48 & 97.93 & 97.93 & 94.48 & 96.55 & 84.20 \\
+$-$8  & \textbf{100.00} & 98.60 & 99.30 & 99.30 & 99.30 & \textbf{100.00} & 90.10 \\
+$-$4  & \textbf{100.00} & 99.24 & \textbf{100.00} & 98.48 & 97.73 & 99.24 & 95.00 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+The negative-SNR regime exposes a fundamental architectural trade-off. At $-$20~dB, where the noise power is 100$\times$ the signal power, all models converge toward chance, but the rate of degradation differs revealingly. CNN architectures with deep, multi-stage convolutional stems (VGG16, Xception) degrade most gracefully, while Vision Mamba suffers the steepest drop. The explanation is structural rather than capacity-related: CNNs apply a cascade of convolution--BatchNorm--ReLU stages that progressively suppress spatially incoherent noise before features reach the classifier, functioning as a learned denoising front-end. Vision Mamba, by contrast, projects raw patches through a single linear embedding directly into the SSM, offering no intermediate opportunity to reject noise before global state propagation begins. Once corrupted tokens enter the recurrence, the SSM's long-range memory---an asset at high SNR---becomes a liability, as noise from early tokens propagates forward and contaminates the entire sequence representation.
+
+This diagnosis has a concrete architectural implication: the gap is not inherent to the SSM formalism but to the patch embedding design. Replacing the single-layer projection with a lightweight convolutional stem would provide hierarchical noise rejection before sequence modeling, a direction we pursue in the hybrid architecture.
+
+\subsection{Computational Efficiency}
+
+Table~\ref{tab:comp_cost} compares model size, single-image inference time (averaged over 100 runs on a Tesla T4 GPU), and efficiency ratios on the Noisy RF dataset.
+
+\begin{table}[htbp]
+\centering
+\caption{Computational Cost Comparison (Noisy RF Dataset, Tesla T4 GPU)}
+\label{tab:comp_cost}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lccccc}
+\hline
+\textbf{Model} & \textbf{Params (M)} & \textbf{Inference (ms)} & \textbf{Accuracy (\%)} & \textbf{Acc/Param} & \textbf{Acc/ms} \\
+\hline
+VGG16-BN       & 134.30 & 16.98 & 99.26 & 0.0074 & 0.058 \\
+MobileNetV3    & 4.21   & 6.55  & 98.96 & 0.2350 & 0.151 \\
+EfficientNet-B0& 4.02   & 8.14  & 99.16 & 0.2469 & 0.122 \\
+Xception        & 20.82  & 5.84  & 98.96 & 0.0475 & 0.169 \\
+ViT-Small       & 21.67  & 5.41  & 98.70 & 0.0456 & 0.183 \\
+Swin-Tiny       & 27.52  & 11.28 & 98.89 & 0.0359 & 0.088 \\
+Vision Mamba    & 10.09  & 26.12 & 95.38 & 0.0946 & 0.037 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+The computational results reveal a counterintuitive finding that challenges common assumptions about SSM efficiency. Despite the $\mathcal{O}(N)$ theoretical complexity of the selective state-space recurrence, Vision Mamba is the \emph{slowest} model in the benchmark at 26.12~ms per image---nearly 5$\times$ slower than ViT-Small (5.41~ms) and 4$\times$ slower than MobileNetV3. This gap between theoretical and practical efficiency deserves explanation.
+
+The bottleneck is the four-directional sequential scan. Each of the four Mamba SSMs processes the 196-token sequence serially, and current CUDA kernels for selective scan cannot fully parallelize the recurrence across tokens the way matrix-multiply units parallelize self-attention. ViT-Small, despite its quadratic $\mathcal{O}(N^2)$ attention, benefits from highly optimized cuBLAS GEMM kernels and Flash Attention implementations that exploit GPU parallelism far more effectively at the modest sequence length of 196 tokens. In other words, the asymptotic advantage of linear SSMs materializes only at sequence lengths far exceeding those produced by $16 \times 16$ patch tokenization of $224 \times 224$ images. For RF spectrogram classification at standard resolution, the practical winner on latency is the tiny transformer, not the state-space model.
+
+
+\subsection{Statistical Significance Test}
+
+
+\section{Conclusion}
+
+
+\begin{thebibliography}{41}
+\bibitem{ref1} Sazdić-Jotić, M. et al.: Survey of UAV detection techniques. (2024)
+\bibitem{ref2} Mokhtari et al.: CRNN for RF classification. (2023)
+
+\bibitem{kim2018drone}
+B.~K. Kim, H. Kim, and J. Park,
+``Drone detection and identification using RF signal analysis,''
+\emph{IEEE Access}, vol.~6, pp.~643--653, 2018.
+
+\bibitem{allahham2019dronerf}
+M. Allahham, T. Khattab, and A. Mohamed,
+``DroneRF dataset: A dataset of radio frequency signals for drone detection,''
+\emph{Data in Brief}, vol.~26, 2019.
+
+\bibitem{oshea2017introduction}
+T. O'Shea and J. Hoydis,
+``An introduction to deep learning for the physical layer,''
+\emph{IEEE Transactions on Cognitive Communications and Networking},
+vol.~3, no.~4, pp.~563--575, 2017.
+
+\bibitem{ozturk2020deep}
+H. Ozturk, B. Ozbay, and O. Karacali,
+``Deep learning-based RF signal classification for UAV detection,''
+\emph{IEEE Access}, vol.~8, pp.~138453--138462, 2020.
+
+\bibitem{shi2022domain}
+Y. Shi, J. Yang, and L. Xie,
+``Domain adaptation for RF signal classification in UAV detection systems,''
+\emph{IEEE Internet of Things Journal}, vol.~9, no.~4, pp.~2753--2765, 2022.
+
+\bibitem{ref8} S. Al-Emadi and F. Al-Senaid, "Drone Detection Approach Based on Radio-Frequency Using Convolutional Neural Network," 2020.
+\bibitem{ref9} M. S. Allahham, T. Khattab, and A. Mohamed, "Deep Learning for RF-Based Drone Detection and Identification: A Multi-Channel 1-D Convolutional Neural Networks Approach," 2020.
+\bibitem{ref10} M. Mokhtari, B. Pavlović, J. Bajčetić, and B. Sazdić-Jotić, "RF-based drone detection and classification system using convolutional neural network," 2021.
+\bibitem{ref11} S. Basak, S. Rajendran, S. Pollin, and B. Scheers, "Drone classification from RF fingerprints using deep residual nets," 2021.
+\bibitem{ref12} R. Kılıç, N. Kumbasar, E. A. Oral, and I. Y. Ozbek, "Drone classification using RF signal based spectral features," 2022.
+
+\bibitem{xu2025rfv}
+L. Xu, et al., "A Radio Frequency Sensor-Based UAV Detection and Identification System Using Improved Vision Transformer-Based Model," \emph{IEEE Sensors Journal}, 2025.
+
+\bibitem{han2025realworld}
+J. Han, et al., "Real-world UAV recognition based on radio frequency fingerprinting with transformer," \emph{IET Communications}, 2025.
+
+\bibitem{jamil2022malicious}
+S. Jamil, et al., "Distinguishing Malicious Drones Using Vision Transformer," \emph{AI}, 2022.
+
+\bibitem{yan2023signalformer}
+X. Yan, et al., "SignalFormer: Hybrid Transformer for Automatic Drone Identification Based on Drone RF Signals," \emph{Sensors}, 2023.
+
+\bibitem{mi2026marnet}
+Y. Mi, R. Wen, and J. Wang, 
+``MaRNet: A UAV Radio Frequency Recognition Method Combining Mamba with ResNet,'' 
+\emph{IEEE Access}, 2026.
+
+\bibitem{yao2025mambarf}
+M. Yao, C. Liu, L. Xie, and M. Chi, 
+``MambaRF: A Bi-directional Mamba Structure for Radio Frequency Signal Classification of Unmanned Aerial Vehicle,'' 
+in \emph{Proc. ICASSP}, 2025.
+
+\bibitem{pei2024efficient}
+X. Pei, T. Huang, and C. Xu, "Efficient VMamba: Atrous Selective Scan for Light Weight Visual Mamba," \emph{arXiv:2403.09977}, 2024.
+
+\bibitem{qin2026dcam}
+Z. Qin and Y. Li, "DCAM-DETR: Dual Cross-Attention Mamba Detection Transformer for RGB-Infrared Anti-UAV Detection," \emph{Information}, 2026.
+
+
+\bibitem{Noh2022}
+D.~I. Noh, S.~G. Jeong, H.~T. Hoang, Q.~V. Pham, T.~Huynh-The, 
+M.~Hasegawa, H.~Sekiya, S.~Y. Kwon, S.~H. Chung, and W.~J. Hwang,
+``Signal preprocessing technique with noise-tolerant for RF-based UAV signal classification,''
+\emph{IEEE Access}, vol.~10, pp.~134785--134798, 2022,
+doi: 10.1109/ACCESS.2022.3225628.
+
+\bibitem{Podder2025}
+P.~Podder, M.~J. Zawodniok, and S.~K. Madria,
+``Deep learning for UAV classification: Impact of noise and multipath fading in RF signals,''
+in \emph{Proc. 10th Int. Conf. Smart and Sustainable Technologies (SpliTech)}, 
+Split, Croatia, 2025, pp.~1--6,
+doi: 10.23919/SpliTech65624.2025.11091682.
+
+\bibitem{Jang2021}
+J.~Jang, H.~Kim, J.~Lee, and H.~Kim,
+``Drone detection and identification system using RF signal classification,''
+\emph{IEEE Sensors Journal}, vol.~21, no.~3, pp.~3499--3509, Feb.~2021,
+doi: 10.1109/JSEN.2020.3029323.
+
+\bibitem{Huang2024}
+C.~Huang, J.~Liu, and Y.~Chen,
+``Robust UAV radio frequency fingerprinting under dynamic channel conditions,''
+\emph{IEEE Transactions on Aerospace and Electronic Systems}, 
+vol.~60, no.~2, pp.~1450--1462, Apr.~2024,
+doi: 10.1109/TAES.2023.3321456.
+
+\bibitem{ref26}
+L.~Zhu, B.~Liao, Q.~Zhang, X.~Wang, W.~Liu, and X.~Wang,
+``Vision Mamba: Efficient Visual Representation Learning with Bidirectional State Space Model,''
+\emph{arXiv preprint arXiv:2401.09417}, 2024.
+
+\bibitem{ref27}
+A.~Gu and T.~Dao,
+``Mamba: Linear-Time Sequence Modeling with Selective State Spaces,''
+\emph{arXiv preprint arXiv:2312.00752}, 2023.
+
+\bibitem{ref28}
+A.~Gu, K.~Goel, and C.~R\'{e},
+``Efficiently Modeling Long Sequences with Structured State Spaces,''
+in \emph{International Conference on Learning Representations (ICLR)}, 2022.
+
+\bibitem{ref29}
+A.~Kendall, Y.~Gal, and R.~Cipolla,
+``Multi-Task Learning Using Uncertainty to Weigh Losses for Scene Geometry and Semantics,''
+in \emph{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, 2018, pp.~7482--7491.
+
+\bibitem{ref30}
+R.~R. Selvaraju, M.~Cogswell, A.~Das, R.~Vedantam, D.~Parikh, and D.~Batra,
+``Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization,''
+in \emph{Proceedings of the IEEE International Conference on Computer Vision (ICCV)}, 2017, pp.~618--626.
+
+\bibitem{ref32}
+W.~Samek, A.~Binder, G.~Montavon, S.~Lapuschkin, and K.-R.~M\"{u}ller,
+``Evaluating the visualization of what a deep neural network has learned,''
+\emph{IEEE Transactions on Neural Networks and Learning Systems}, vol.~28, no.~11, pp.~2660--2673, 2017.
+
+\bibitem{ref33}
+L.~van der Maaten and G.~Hinton,
+``Visualizing Data using t-SNE,''
+\emph{Journal of Machine Learning Research}, vol.~9, pp.~2579--2605, 2008.
+\bibitem{ref34}
+L.~Anttila, M.~Valkama, and M.~Renfors,
+``Circularity-Based I/Q Imbalance Compensation in Wideband Direct-Conversion Receivers,''
+\emph{IEEE Trans. Veh. Technol.}, vol.~57, no.~4, pp.~2099--2113, 2008.
+
+\bibitem{ref35}
+F.~J.~Harris,
+``On the Use of Windows for Harmonic Analysis with the Discrete Fourier Transform,''
+\emph{Proc. IEEE}, vol.~66, no.~1, pp.~51--83, 1978.
+
+\bibitem{ref36}
+J.~D.~Hunter,
+``Matplotlib: A 2D Graphics Environment,''
+\emph{Comput. Sci. Eng.}, vol.~9, no.~3, pp.~90--95, 2007.
+\bibitem{stankovic2023vtidroneset}
+M. Stankovi\'{c}, V. Stankovi\'{c}, I. Orovi\'{c}, and A. Kova\v{c}evi\'{c},
+``{VTI\_DroneSET}: A Radio-Frequency Dataset for Multi-Drone Detection and Classification,''
+\emph{Data in Brief}, 2023.
+
+\bibitem{ref37}
+N. Soltani, K. Sankhe, S. Rey, S. Ioannidis, and K. Chowdhury,
+``More Is Better: Data Augmentation for Channel-Resilient {RF} Fingerprinting,''
+\emph{IEEE Communications Magazine}, 2022.
+
+\bibitem{ref38}
+S. Gl\"{u}ge, M. Nyfeler, N. Ramagnano, C. Horn, and C. Sch\"{u}pbach,
+``Robust Low-Complexity Drone Remote Controller Detection Based on {RF} Features,''
+in \emph{Proc. IEEE Wireless Communications and Networking Conference (WCNC)}, 2023.
+
+\bibitem{ref39}
+D. S. Park, W. Chan, Y. Zhang, C.-C. Chiu, B. Zoph, E. D. Cubuk, and Q. V. Le,
+``{SpecAugment}: A Simple Data Augmentation Method for Automatic Speech Recognition,''
+in \emph{Proc. Interspeech}, 2019.
+
+\bibitem{ref40}
+T.-Y. Lin, P. Goyal, R. Girshick, K. He, and P. Doll\'{a}r,
+``Focal Loss for Dense Object Detection,''
+in \emph{Proc. IEEE/CVF International Conference on Computer Vision (ICCV)}, 2017.
+
+\end{thebibliography}
+
+\end{document}

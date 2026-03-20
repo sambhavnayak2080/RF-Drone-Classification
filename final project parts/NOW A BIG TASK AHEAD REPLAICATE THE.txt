@@ -1,0 +1,156 @@
+NOW A BIG TASK AHEAD: REPLAICATE THE BEST HYBRID ON OTHER DATASET
+Starting with VTI_DRONESET.
+Create complete notebook cell by cell properly. Don't overcomplicate much
+Ask any clarifying questions if needed 
+Don't rely on markdowns in notebooks\noisyrf-hybridcnnvim.ipynb
+rather read the cells to understand how the hybrid works
+and implement on this dataset. 
+Remember, we have to make quite a few adaptations, like VTI has 3 tasks compared to this 1 task
+classes and rest information:
+not a huge imbalance, so handle it carefully
+
+Loading VTI dataset...
+Total images loaded: 8550
+
+Drone type distribution:
+  phantom_iv            :    1710
+  mavic_zoom            :    1710
+  mavic2_enterprise     :    1710
+  multi_drone           :    3420
+Flight mode distribution:
+  background            :    1710
+  connecting            :    1710
+  hovering              :    1710
+  flying                :    1710
+  flying_recording      :    1710
+Drone count distribution:
+  one                   :    5130
+  two                   :    1710
+  three                 :    1710
+
+PLEASE READ notebooks\baseline-vim\vim-vti-2.ipynb TO understand how to parse and load images of this dataset
+Input Data Structure (Do not hallucinate paths): Ensure a proper 80/20 split without data leakage
+
+Root:
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/ = for clean, 0 to 20dB
+/kaggle/input/datasets/subratcodes67/negative-spectrograms/noisy_spectrograms/ = for -5,-10,-15
+Bands: 2.4GHz, 5.8GHz
+
+SNR Levels: snr_+00dB, snr_+05dB, snr_+10dB, snr_+15dB, snr_+20dB, snr_clean
+
+
+Image Path Format:
+
+Noisy:
+{root}/{band}/{snr_level}/images/0100000_snr+00_w0000.png
+
+Clean:
+{root}/{band}/snr_clean/images/0100000_snr+999_w0000.png
+
+EXAMPLE
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+00dB
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+05dB
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+10dB
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+15dB
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+20dB
+
+/kaggle/input/datasets/subratcodes67/negative-spectrograms/noisy_spectrograms/2.4GHz/snr_-05dB
+
+/kaggle/input/datasets/subratcodes67/negative-spectrograms/noisy_spectrograms/2.4GHz/snr_-15dB
+
+/kaggle/input/datasets/subratcodes67/negative-spectrograms/noisy_spectrograms/2.4GHz/snr_-10dB
+
+images path of noisy image
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+00dB/images/0100000_snr+00_w0000.png
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_+05dB/images/0100000_snr+05_w0032.png
+
+similarly for all snr levels
+
+clean:
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_clean/images
+
+images like
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_clean/images/0100000_snr+999_w0000.png
+
+/kaggle/input/datasets/subratcodesmodels/spectrogram-new-vti/noisy_spectrograms/2.4GHz/snr_clean/images/0100000_snr+999_w0032.png
+
+more noisy paths
+/kaggle/input/datasets/subratcodes67/negative-spectrograms/noisy_spectrograms/2.4GHz/snr_-05dB/images/0100000_snr-05_w0000.png
+
+/kaggle/input/datasets/subratcodes67/negative-spectrograms/noisy_spectrograms/2.4GHz/snr_-15dB/images/0100000_snr-15_w0064.png
+
+Database Description
+This RF database (VTI_RFDroneSET) was obtained using Tektronix Real Time Spectrum Analyzer, two
+receiving antennas (for two separate ISM bands) with corresponding cables and connectors were used.
+The Real Time Spectrum Analyzer an instantaneously record bandwidth of 110 MHz within 2.4 or 5.8 GHz
+ISM bands and to save records directly in a *.mat format that is suitable for loading and analyzing in the
+MatLab application. It is important to notice that the acquisition length of each signal was 450 ms and the
+sampling frequency was 150 MSample/s for instantaneous bandwidth of 110 MHz, which produce *.mat file
+of around 500 MB for every RF signal from the experiment. Each saved file contains all this additional and
+useful information that can be used after importing into the MatLab application. For the equipment under
+test (EUT), three different drones (DJI Phantom IV, DJI Mavic Zoom and DJI Mavic 2 Enterprise) were used
+with a flight controller that sends and receives RF commands to and from drones in order to change the
+flight (operational) mode.
+Data acquisition for each drone separately with four distinctive flight (operational) modes was performed
+during all experiments. In order to analyze the whole radio traffic, each experiment was organized in five
+steps:
+ EUT is off. Drone is turned off. RF background (ambient) is recorded. For the sake of more
+genuine approach, random Wi-Fi and Bluetooth radio-communications at the beginning of
+experiment were induced.
+ EUT is on and performing connecting procedure with flight controller. Drone is turned on by
+operator. Drone is connecting to flight controller. Recording is performed until drone is connected
+to flight controller.
+ EUT is hovering. Operator lifts off the drone and puts it in a state of hovering (drone is flying
+without changing altitude and position, i.e. operator do not issue any commands). Recording is
+performed while drone is hovering (maintain height and position) independently without any
+operator command.
+Page 2 of 5
+ EUT is flying. Operator issue some basic commands while drone is moving left, right, down and up.
+Recording is performed while drone is flying (drone is changing altitude and position all the time) by
+the commands from operator.
+ EUT is flying and recording video. Operator enables video recording on drone and issues some
+basic commands while drone is moving left, right, down and up. Recording is performed while
+drone is flying and recording video to the flight controller.
+This step by step procedure was done for all drones and encompasses one experiment. Total of 3
+experiments were realized, one with single drone, one with two drones and one with three drones, which
+produced 25 recordings (15 recordings for the first experiment, 5 recordings for the second and 5
+recordings third experiments) in 2.4 GHz ISM band and repeat all these for 5.8 GHz ISM band, which
+counts 50 recordings in total. In addition, it should be pointed out that each experiment was conducted in
+laboratory (indoor) conditions where RF background recording was firstly executed before four flight
+modes.
+To prepare DNN input data and to create new RF drone database, a Binary Unique Identifier (BUI) was
+used for data notation. The good practice was followed and created the new RF drone database using
+suggested parameters such as number of experiments (E), total number of drones (D), and total number of
+flight modes, including RF background (F). Finally, new database was finished by using E = 3, D = 3 and F= 5. 
+Drone type registry:
+  0: phantom_iv
+  1: mavic_zoom
+  2: mavic2_enterprise
+  3: multi_drone
+Flight mode registry:
+  0: background
+  1: connecting
+  2: hovering
+  3: flying
+  4: flying_recording
+Drone count registry:
+  0: one
+  1: two
+  2: three
+Coding Constraints (Mandatory)
+
+No emojis
+No tick marks in code
+No inline comments
+Each function may contain exactly one comment, 
+Do not add advice, recommendations, qualitative judgments, or descriptive adjectives
+Code must be minimal, deterministic, and reproducible
