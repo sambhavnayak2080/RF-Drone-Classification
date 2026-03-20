@@ -1,0 +1,22 @@
+European policy for AI usage
+(MoR) transformer mixture of recursion (higher)
+Explain me how transformer will make into patches with similarity between them 
+Specify me patch size which will improve the transformer performances
+why is models like SwinTiny, vit small these are performing worst than CNN on this dataset:
+The target dataset is the "Non-standard Waveforms from Hovering UAVs" (Genesys Lab).
+
+Objective: RF fingerprinting of 7 identical DJI M100 UAVs to distinguish specific devices (not just types).
+
+Format: SigMF (Signal Metadata Format).
+
+Data: Binary .bin files containing interleaved I/Q samples encoded as float16.
+
+Metadata: .json files containing capture details (UAV ID, distance, burst ID, transmission number).
+
+Content:
+
+Classes: 7 UAVs (uav1 to uav7).
+
+Conditions: Hovering at distances of 6ft, 9ft, 12ft, and 15ft.
+
+Signal Structure: Short, non-overlapping bursts separated from noise. Average length ~92k samples per burst.

@@ -1,0 +1,144 @@
+read doc 9 and ipynb file to understand work on vti dataset
+Objective
+Provide Kaggle-compatible, snippet-wise training code to train three deep learning models on the Genesys Spectrogram Dataset using 2× NVIDIA T4 GPUs.
+The code must strictly follow the training protocol provided in the attached VTI notebook and training guide, adapting it appropriately for this dataset and task.
+Environment Requirements
+* Platform: Kaggle Notebook
+* Hardware: 2× T4 GPUs
+* Ensure multi-GPU training compatibility (DataParallel or DistributedDataParallel).
+Code Style Requirements
+* Provide clean, modular code snippets ready for Kaggle execution.
+* No emojis
+* No checkmarks
+* No suggestions inside code blocks
+* Print metrics clearly and neatly.
+* Avoid unnecessary verbosity.
+Dataset Location (Do NOT hallucinate paths)
+Root Directory
+
+```
+/kaggle/input/datasets/sambhavnayak/genesys-spectrogram-dataset
+
+```
+
+Directory Hierarchy
+
+```
+uav1/
+   snr_20dB/
+   snr_15dB/
+   snr_10dB/
+   snr_5dB/
+   snr_0dB/
+   clean/
+...
+uav7/
+
+```
+
+Filename Pattern
+
+```
+{uavID}_{distance}_{burstID}_{frameID}.png
+Example: uav1_12ft_burst1_1.png
+
+```
+
+Distances encoded in filenames:
+* 6ft
+* 9ft
+* 12ft
+* 15ft
+Dataset Labels
+since this is differnet dataset, the tasks are different:
+Primary Task: Device Identification (RF Fingerprinting)
+* Type: Multiclass Classification
+* Classes: 7 (uav1 … uav7)
+* Goal: Identify the specific drone unit, not the drone type.
+Secondary Task: Distance Estimation
+* Type: Classification (preferred) or Regression
+* Classes: 4 (6ft, 9ft, 12ft, 15ft)
+* Purpose: Encourage separation of channel/path-loss features from hardware fingerprints.
+
+Data Handling & Splitting
+* Use 80/20 train-validation split
+* Ensure split prevents data leakage
+* Maintain class balance across splits
+* Handle SNR folders correctly
+* Extract distance labels from filenames
+* Ensure deterministic splitting
+Training Protocol
+Follow VTI training methodology with adaptation to this dataset.
+During training print:
+* Train Loss
+* Validation Loss
+* Train Accuracy
+* Validation Accuracy
+Evaluation Requirements
+After training:
+1. Overall Metrics
+Print clearly for each model:
+* Accuracy
+* F1 Score
+* False Positive Rate (FPR)
+* False Negative Rate (FNR)
+2. Per-SNR Evaluation
+Evaluate and print:
+
+```
+Metrics per SNR level:
+clean
+0dB
+5dB
+10dB
+15dB
+20dB
+
+```
+
+For each SNR level print:
+* Accuracy
+* F1 Score
+* FPR
+* FNR
+Additional Constraints
+* Prevent data leakage.
+* Ensure reproducibility.
+* Proper GPU utilization.
+* Efficient dataloading.
+* Clear logging format.
+Context Summary (for adaptation)
+The spectrogram images were generated from complex I/Q bursts using:
+* DC removal & Gram-Schmidt correction
+* AWGN & impulse noise augmentation
+* FFT size: 2048
+* Log power spectrum
+* Percentile normalization
+* Viridis colormap
+* Resized to 224×224 RGB
+The training pipeline must adapt the VTI methodology to this spectrogram dataset and the new multitask objective.
+Model 4: Xception (Depth-Separable CNN)
+
+RF Spectrogram Adaptation:
+- Depthwise separable convolutions decouple spatial (frequency-time) and channel-wise learning
+- Efficient for RF where frequency patterns (spatial) and signal characteristics (channels) are independent
+- 36 convolutional layers with residual connections prevent gradient degradation
+- Modification: Global average pooling preserves spatial translation invariance
+
+
+Model 5: Vision Transformer (ViT-Small/16)
+
+RF Spectrogram Adaptation:
+- Global self-attention captures long-range frequency dependencies across entire spectrogram
+- 16x16 patches create 196 tokens, each representing a local frequency-time region
+- Positional embeddings encode spatial relationships between RF patterns
+- Modification: Small variant (22M params) with attention extraction for explainability
+
+
+Model 6: Swin Transformer Tiny
+
+RF Spectrogram Adaptation:
+- Shifted window attention balances local RF pattern extraction with cross-region interaction
+- Hierarchical feature maps (56->28->14->7) capture multi-scale frequency structures
+- Linear complexity O(n) vs ViT O(n^2) enables efficient processing
+- Modification: Tiny variant (28M params) provides transformer SOTA with manageable compute
